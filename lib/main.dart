@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+const String _name = "Your Name";
+
 void main() => runApp(new Friendlychatapp());
 
 class Friendlychatapp extends StatelessWidget {
@@ -14,14 +16,37 @@ class ChatScreen extends StatefulWidget {
   State<StatefulWidget> createState() => new ChatScreenState();
 }
 
-class ChatScreenState extends State<ChatScreen> {
+class ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
+  final List<ChatMessage> _messages = <ChatMessage>[];
   final TextEditingController _textController = new TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
         appBar: new AppBar(title: new Text("FriendlyChat")),
-        body: _buildTextComposer());
+        body: new Column(
+          children: <Widget>[
+            new Flexible(
+                child: new ListView.builder(
+                    padding: new EdgeInsets.all(8.0),
+                    reverse: true,
+                    itemBuilder: (_, int index) => _messages[index],
+                    itemCount: _messages.length)),
+            new Divider(height: 1.0),
+            new Container(
+              decoration: new BoxDecoration(color: Theme.of(context).cardColor),
+              child: _buildTextComposer(),
+            )
+          ],
+        ));
+  }
+
+  @override
+  void dispose() {
+    //new
+    for (ChatMessage message in _messages) //new
+      message.animationController.dispose(); //new
+    super.dispose(); //new
   }
 
   Widget _buildTextComposer() {
@@ -50,5 +75,49 @@ class ChatScreenState extends State<ChatScreen> {
 
   void _handleSubmitted(String value) {
     _textController.clear();
+    ChatMessage message = new ChatMessage(
+        text: value,
+        animationController: new AnimationController(
+            duration: new Duration(milliseconds: 700), vsync: this));
+    setState(() {
+      _messages.insert(0, message);
+    });
+    message.animationController.forward();
+  }
+}
+
+class ChatMessage extends StatelessWidget {
+  ChatMessage({this.text, this.animationController});
+  final String text;
+  final AnimationController animationController;
+  @override
+  Widget build(BuildContext context) {
+    return new SizeTransition(
+        //new
+        sizeFactor: new CurvedAnimation(
+            parent: animationController, curve: Curves.easeOut),
+        axisAlignment: 0.0,
+        child: new Container(
+          margin: const EdgeInsets.symmetric(vertical: 10.0),
+          child: new Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              new Container(
+                margin: const EdgeInsets.only(right: 16.0),
+                child: new CircleAvatar(child: new Text(_name[0])),
+              ),
+              new Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  new Text(_name, style: Theme.of(context).textTheme.subhead),
+                  new Container(
+                    margin: const EdgeInsets.only(top: 5.0),
+                    child: new Text(text),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ));
   }
 }
